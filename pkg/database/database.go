@@ -8,14 +8,14 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func GetDatabase(url string) (*sql.DB, error) {
+func GetDatabase(url, schemaPath string) (*sql.DB, error) {
 	fmt.Println("Connecting to database...")
 	db, err := sql.Open("postgres", url)
 	if err != nil {
 		return nil, err
 	}
 	fmt.Println("Creating tables...")
-	b, err := os.ReadFile("pkg/database/schema.sql")
+	b, err := os.ReadFile(schemaPath)
 	if err != nil {
 		return nil, err
 	}
@@ -23,9 +23,10 @@ func GetDatabase(url string) (*sql.DB, error) {
 	return db, nil
 }
 
-func MustGetDatabase(url string) *sql.DB {
-	db, err := GetDatabase(url)
+func MustGetDatabase(url, schemaPath string) *sql.DB {
+	db, err := GetDatabase(url, schemaPath)
 	if err != nil {
+		fmt.Println(err.Error())
 		panic(err)
 	}
 	return db
