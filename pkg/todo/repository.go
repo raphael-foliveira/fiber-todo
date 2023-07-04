@@ -2,6 +2,14 @@ package todo
 
 import "database/sql"
 
+type ITodoRepository interface {
+	Create(todo Todo) (int, error)
+	List() ([]Todo, error)
+	Retrieve(id int) (Todo, error)
+	Update(todo Todo) (Todo, error)
+	Delete(id int) error
+}
+
 type TodoRepository struct {
 	Db *sql.DB
 }
