@@ -1,0 +1,23 @@
+services:
+  database:
+    image: postgres:alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - ./data:/var/lib/postgresql/data
+  app:
+    build: .
+    ports:
+      - 3000:3000
+    depends_on:
+      - database
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    volumes:
+      - ./cmd:/app/cmd
+      - ./pkg:/app/pkg
+    command: air
