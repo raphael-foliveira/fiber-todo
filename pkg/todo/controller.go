@@ -6,10 +6,10 @@ import (
 )
 
 type TodoController struct {
-	repository *TodoRepository
+	repository ITodoRepository
 }
 
-func NewTodoController(repository *TodoRepository) *TodoController {
+func NewTodoController(repository ITodoRepository) *TodoController {
 	return &TodoController{repository: repository}
 }
 
