@@ -1,0 +1,14 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "A To Do app built with the Fiber framework",
+        "title": "Fiber To Do API",
+        "contact": {
+            "name": "Raphael Oliveira",
+            "url": "https://github.com/raphael-foliveira"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/api",
+    "paths": {}
+}
