@@ -8,6 +8,13 @@ import (
 	"github.com/raphael-foliveira/fiber-todo/pkg/server"
 )
 
+// @title           Fiber To Do API
+// @version         1.0
+// @description     A To Do app built with the Fiber framework
+
+// @contact.name   Raphael Oliveira
+// @contact.url    https://github.com/raphael-foliveira
+// @BasePath /api
 func main() {
 	godotenv.Load()
 	db := database.MustGetDatabase(os.Getenv("DATABASE_URL"), "pkg/database/schema.sql")

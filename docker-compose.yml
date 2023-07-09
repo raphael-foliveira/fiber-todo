@@ -6,9 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
-    volumes:
-      - ./data:/var/lib/postgresql/data
+      POSTGRES_DB: fiber_todo
   app:
     build: .
     ports:
@@ -19,6 +17,5 @@ services:
       DATABASE_URL: ${DATABASE_URL}
       TEST_DATABASE_URL: ${TEST_DATABASE_URL}
     volumes:
-      - ./cmd:/app/cmd
-      - ./pkg:/app/pkg
+      - .:/app
     command: air

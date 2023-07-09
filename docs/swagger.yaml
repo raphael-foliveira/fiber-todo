@@ -1,0 +1,10 @@
+basePath: /api
+info:
+  contact:
+    name: Raphael Oliveira
+    url: https://github.com/raphael-foliveira
+  description: A To Do app built with the Fiber framework
+  title: Fiber To Do API
+  version: "1.0"
+paths: {}
+swagger: "2.0"
