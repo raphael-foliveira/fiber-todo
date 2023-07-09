@@ -20,7 +20,7 @@ func NewTodoController(repository ITodoRepository) *TodoController {
 // @Accept json
 // @Produce json
 // @Param todo body TodoDto true "To Do Create"
-// @Success 201 CreateResponse
+// @Success 201 {object} CreateResponse
 // @Failure 400 {object} string "Bad Request"
 // @Failure 500 {object} string "Internal Server Error"
 // @Router /todos [post]
