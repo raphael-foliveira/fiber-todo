@@ -3,7 +3,7 @@ package todo
 import "database/sql"
 
 type ITodoRepository interface {
-	Create(todo Todo) (int, error)
+	Create(todo TodoDto) (int, error)
 	List() ([]Todo, error)
 	Retrieve(id int) (Todo, error)
 	Update(todo Todo) (Todo, error)
@@ -18,7 +18,7 @@ func NewTodoRepository(db *sql.DB) *TodoRepository {
 	return &TodoRepository{Db: db}
 }
 
-func (tr *TodoRepository) Create(todo Todo) (int, error) {
+func (tr *TodoRepository) Create(todo TodoDto) (int, error) {
 	row := tr.Db.QueryRow("INSERT INTO todo (title, description, completed) VALUES ($1, $2, $3) RETURNING id",
 		todo.Title, todo.Description, todo.Completed)
 	var id int
@@ -33,8 +33,8 @@ func (tr *TodoRepository) List() ([]Todo, error) {
 	}
 	defer rows.Close()
 	todos := []Todo{}
+	var todo Todo
 	for rows.Next() {
-		todo := Todo{}
 		err := rows.Scan(&todo.Id, &todo.Title, &todo.Description, &todo.Completed)
 		if err != nil {
 			return nil, err

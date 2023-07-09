@@ -19,8 +19,8 @@ func NewTodoController(repository ITodoRepository) *TodoController {
 // @Tags To Do
 // @Accept json
 // @Produce json
-// @Param todo body Todo true "To Do Create"
-// @Success 201 {object} int "id"
+// @Param todo body TodoDto true "To Do Create"
+// @Success 201 CreateResponse
 // @Failure 400 {object} string "Bad Request"
 // @Failure 500 {object} string "Internal Server Error"
 // @Router /todos [post]
@@ -83,7 +83,7 @@ func (tc *TodoController) Retrieve(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "To Do ID"
-// @Param todo body Todo true "To Do Update"
+// @Param todo body TodoDto true "To Do Update"
 // @Success 200 {object} Todo
 // @Failure 404 {object} string "Not Found"
 // @Failure 422 {object} string "Unprocessable Entity"
@@ -94,11 +94,11 @@ func (tc *TodoController) Update(c *fiber.Ctx) (err error) {
 	if err != nil {
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
-	todo.Id, err = common.ParseIdFromParams(c)
+	todoId, err := common.ParseIdFromParams(c)
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnprocessableEntity)
 	}
-	uTodo, err := tc.repository.Update(todo)
+	uTodo, err := tc.repository.Update(Todo{Id: todoId, Title: todo.Title, Description: todo.Description, Completed: todo.Completed})
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
 	}
@@ -131,8 +131,8 @@ func (tc *TodoController) Delete(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-func parseTodoFromBody(c *fiber.Ctx) (Todo, error) {
-	var todo Todo
+func parseTodoFromBody(c *fiber.Ctx) (TodoDto, error) {
+	var todo TodoDto
 	if err := c.BodyParser(&todo); err != nil {
 		return todo, err
 	}
