@@ -18,6 +18,17 @@ import (
 var db *sql.DB
 var app *fiber.App
 
+func createTodoBodyHelper() (*bytes.Buffer, error) {
+	var todo Todo
+	faker.FakeData(&todo)
+	todoW := new(bytes.Buffer)
+	err := json.NewEncoder(todoW).Encode(&todo)
+	if err != nil {
+		return nil, err
+	}
+	return todoW, err
+}
+
 func TestMain(m *testing.M) {
 	fmt.Println("running tests...")
 	err := godotenv.Load("../../.env")
@@ -40,12 +51,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreate(t *testing.T) {
-	var todo Todo
-	faker.FakeData(&todo)
-	todoW := new(bytes.Buffer)
-	err := json.NewEncoder(todoW).Encode(&todo)
+	todoW, err := createTodoBodyHelper()
 	if err != nil {
-		t.Errorf("Error marshalling todo: %v", err)
+		t.Errorf("Error creating todo: %v", err)
 	}
 	req, err := http.NewRequest("POST", "/todos", todoW)
 	if err != nil {
@@ -92,12 +100,9 @@ func TestRetrieve(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	var todo Todo
-	faker.FakeData(&todo)
-	todoW := new(bytes.Buffer)
-	err := json.NewEncoder(todoW).Encode(&todo)
+	todoW, err := createTodoBodyHelper()
 	if err != nil {
-		t.Errorf("Error marshalling todo: %v", err)
+		t.Errorf("Error creating todo: %v", err)
 	}
 	req, err := http.NewRequest("PUT", "/todos/1", todoW)
 	if err != nil {
