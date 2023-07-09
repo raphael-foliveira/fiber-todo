@@ -20,7 +20,7 @@ func NewTodoController(repository ITodoRepository) *TodoController {
 // @Accept json
 // @Produce json
 // @Param todo body TodoDto true "To Do Create"
-// @Success 201 CreateResponse
+// @Success 201 {object} CreateResponse
 // @Failure 400 {object} string "Bad Request"
 // @Failure 500 {object} string "Internal Server Error"
 // @Router /todos [post]
@@ -115,7 +115,7 @@ func (tc *TodoController) Update(c *fiber.Ctx) (err error) {
 // @Accept json
 // @Produce json
 // @Param id path int true "To Do ID"
-// @Success 204 {object} string "No Content"
+// @Success 204 "No Content"
 // @Failure 422 {object} string "Unprocessable Entity"
 // @Failure 500 {object} string "Internal Server Error"
 // @Router /todos/{id} [delete]
