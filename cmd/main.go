@@ -17,7 +17,7 @@ import (
 // @BasePath /api
 func main() {
 	godotenv.Load()
-	db := database.MustGetDatabase(os.Getenv("DATABASE_URL"))
+	db := database.MustGetDatabase(os.Getenv("DATABASE_URL"), "pkg/database/schema.sql")
 	defer db.Close()
 	server.StartServer(db)
 }

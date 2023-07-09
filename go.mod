@@ -3,6 +3,7 @@ module github.com/raphael-foliveira/fiber-todo
 go 1.20
 
 require (
+	github.com/go-faker/faker/v4 v4.1.1
 	github.com/gofiber/fiber/v2 v2.47.0
 	github.com/gofiber/swagger v0.1.12
 	github.com/joho/godotenv v1.5.1
@@ -34,6 +35,7 @@ require (
 	github.com/valyala/fasthttp v1.48.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/tools v0.11.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
