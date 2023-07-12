@@ -1,4 +1,30 @@
 basePath: /api
+definitions:
+  todo.CreateResponse:
+    properties:
+      id:
+        type: integer
+    type: object
+  todo.Todo:
+    properties:
+      completed:
+        type: boolean
+      description:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  todo.TodoDto:
+    properties:
+      completed:
+        type: boolean
+      description:
+        type: string
+      title:
+        type: string
+    type: object
 info:
   contact:
     name: Raphael Oliveira
@@ -6,5 +32,148 @@ info:
   description: A To Do app built with the Fiber framework
   title: Fiber To Do API
   version: "1.0"
-paths: {}
+paths:
+  /todos:
+    get:
+      consumes:
+      - application/json
+      description: List To Dos
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/todo.Todo'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: List To Dos
+      tags:
+      - To Do
+    post:
+      consumes:
+      - application/json
+      description: Create a new To Do
+      parameters:
+      - description: To Do Create
+        in: body
+        name: todo
+        required: true
+        schema:
+          $ref: '#/definitions/todo.TodoDto'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/todo.CreateResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a new To Do
+      tags:
+      - To Do
+  /todos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a To Do
+      parameters:
+      - description: To Do ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "422":
+          description: Unprocessable Entity
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Delete a To Do
+      tags:
+      - To Do
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a To Do
+      parameters:
+      - description: To Do ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/todo.Todo'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "422":
+          description: Unprocessable Entity
+          schema:
+            type: string
+      summary: Retrieve a To Do
+      tags:
+      - To Do
+    put:
+      consumes:
+      - application/json
+      description: Update a To Do
+      parameters:
+      - description: To Do ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: To Do Update
+        in: body
+        name: todo
+        required: true
+        schema:
+          $ref: '#/definitions/todo.TodoDto'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/todo.Todo'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "422":
+          description: Unprocessable Entity
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Update a To Do
+      tags:
+      - To Do
 swagger: "2.0"
