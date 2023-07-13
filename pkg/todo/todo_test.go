@@ -33,7 +33,6 @@ func TestMain(m *testing.M) {
 	fmt.Println("running tests...")
 	err := godotenv.Load("../../.env")
 	if err != nil {
-		fmt.Println(err)
 		panic(err)
 	}
 	fmt.Println(os.Getenv("TEST_DATABASE_URL"))
@@ -74,28 +73,28 @@ func TestCreate(t *testing.T) {
 func TestList(t *testing.T) {
 	req, err := http.NewRequest("GET", "/todos", nil)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	res, err := app.Test(req)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	if res.StatusCode != http.StatusOK {
-		fmt.Println("Expected status code 200, got", res.StatusCode)
+		t.Errorf("Expected status code 200, got %d", res.StatusCode)
 	}
 }
 
 func TestRetrieve(t *testing.T) {
 	req, err := http.NewRequest("GET", "/todos/1", nil)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	res, err := app.Test(req)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	if res.StatusCode != http.StatusOK {
-		fmt.Println("Expected status code 200, got", res.StatusCode)
+		t.Errorf("Expected status code 200, got %d", res.StatusCode)
 	}
 }
 
@@ -123,13 +122,13 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/todos/1", nil)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	res, err := app.Test(req)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	if res.StatusCode != http.StatusNoContent {
-		fmt.Println("Expected status code 200, got", res.StatusCode)
+		t.Errorf("Expected status code 200, got %d", res.StatusCode)
 	}
 }
