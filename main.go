@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	"github.com/raphael-foliveira/fiber-todo/pkg/common"
 	"github.com/raphael-foliveira/fiber-todo/pkg/database"
 	"github.com/raphael-foliveira/fiber-todo/pkg/server"
 )
@@ -16,8 +17,13 @@ import (
 // @contact.url    https://github.com/raphael-foliveira
 // @BasePath /api
 func main() {
+	args := os.Args[1:]
 	godotenv.Load()
-	db := database.MustGetDatabase(os.Getenv("DATABASE_URL"), "pkg/database/schema.sql")
+	db := database.MustGetDatabase(os.Getenv("DATABASE_URL"))
+	if (common.Contains(args, "migrate")) {
+		db.Migrate("./pkg/database/schema.sql")
+		return
+	}
 	defer db.Close()
-	server.StartServer(db)
+	server.StartServer(db.DB)
 }

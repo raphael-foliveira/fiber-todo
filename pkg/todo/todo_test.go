@@ -2,7 +2,6 @@ package todo
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,7 +14,7 @@ import (
 	"github.com/raphael-foliveira/fiber-todo/pkg/database"
 )
 
-var db *sql.DB
+var db *database.Database
 var app *fiber.App
 
 func TestMain(m *testing.M) {
@@ -25,12 +24,13 @@ func TestMain(m *testing.M) {
 		fmt.Println(err)
 		panic(err)
 	}
-	fmt.Println(os.Getenv("TEST_DATABASE_URL"))
-	db = database.MustGetDatabase(os.Getenv("TEST_DATABASE_URL"), "../database/schema.sql")
-	db.Exec("INSERT INTO todo (id, title, description, completed) VALUES ('1', 'test', 'test', false), ('2', 'test2', 'test2', false)")
+	db = database.MustGetDatabase(os.Getenv("TEST_DATABASE_URL"))
+	db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+	db.Migrate("../database/schema.sql")
+	db.Exec("INSERT INTO todo (title, description, completed) VALUES ('test', 'test', false), ('test2', 'test2', false)")
 	app = fiber.New()
 	group := app.Group("/todos")
-	GetTodoRoutes(group, db)
+	GetTodoRoutes(group, db.DB)
 
 	code := m.Run()
 
@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreate(t *testing.T) {
-	var todo Todo
+	var todo TodoDto
 	faker.FakeData(&todo)
 	todoW := new(bytes.Buffer)
 	err := json.NewEncoder(todoW).Encode(&todo)
@@ -52,8 +52,8 @@ func TestCreate(t *testing.T) {
 		t.Errorf("Error creating request: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-
 	res, err := app.Test(req)
+	
 	if err != nil {
 		t.Errorf("Error sending request: %v", err)
 	}

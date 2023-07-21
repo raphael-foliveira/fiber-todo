@@ -1,6 +1,8 @@
 package todo
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/raphael-foliveira/fiber-todo/pkg/common"
 )
@@ -27,11 +29,13 @@ func NewTodoController(repository ITodoRepository) *TodoController {
 func (tc *TodoController) Create(c *fiber.Ctx) error {
 	todo, err := parseTodoFromBody(c)
 	if err != nil {
+		fmt.Println(err)
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
 	id, err := tc.repository.Create(todo)
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		fmt.Println(err)
+		return c.SendStatus(fiber.StatusConflict)
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
 }
@@ -133,8 +137,6 @@ func (tc *TodoController) Delete(c *fiber.Ctx) error {
 
 func parseTodoFromBody(c *fiber.Ctx) (TodoDto, error) {
 	var todo TodoDto
-	if err := c.BodyParser(&todo); err != nil {
-		return todo, err
-	}
-	return todo, nil
+	err := c.BodyParser(&todo)
+	return todo, err
 }
