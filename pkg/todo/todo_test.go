@@ -17,11 +17,21 @@ import (
 var db *database.Database
 var app *fiber.App
 
+func createTodoBodyHelper() (*bytes.Buffer, error) {
+	var todo Todo
+	faker.FakeData(&todo)
+	todoW := new(bytes.Buffer)
+	err := json.NewEncoder(todoW).Encode(&todo)
+	if err != nil {
+		return nil, err
+	}
+	return todoW, err
+}
+
 func TestMain(m *testing.M) {
 	fmt.Println("running tests...")
 	err := godotenv.Load("../../.env")
 	if err != nil {
-		fmt.Println(err)
 		panic(err)
 	}
 	db = database.MustGetDatabase(os.Getenv("TEST_DATABASE_URL"))
@@ -40,12 +50,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreate(t *testing.T) {
-	var todo TodoDto
-	faker.FakeData(&todo)
-	todoW := new(bytes.Buffer)
-	err := json.NewEncoder(todoW).Encode(&todo)
+	todoW, err := createTodoBodyHelper()
 	if err != nil {
-		t.Errorf("Error marshalling todo: %v", err)
+		t.Errorf("Error creating todo: %v", err)
 	}
 	req, err := http.NewRequest("POST", "/todos", todoW)
 	if err != nil {
@@ -66,38 +73,35 @@ func TestCreate(t *testing.T) {
 func TestList(t *testing.T) {
 	req, err := http.NewRequest("GET", "/todos", nil)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	res, err := app.Test(req)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	if res.StatusCode != http.StatusOK {
-		fmt.Println("Expected status code 200, got", res.StatusCode)
+		t.Errorf("Expected status code 200, got %d", res.StatusCode)
 	}
 }
 
 func TestRetrieve(t *testing.T) {
 	req, err := http.NewRequest("GET", "/todos/1", nil)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	res, err := app.Test(req)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	if res.StatusCode != http.StatusOK {
-		fmt.Println("Expected status code 200, got", res.StatusCode)
+		t.Errorf("Expected status code 200, got %d", res.StatusCode)
 	}
 }
 
 func TestUpdate(t *testing.T) {
-	var todo Todo
-	faker.FakeData(&todo)
-	todoW := new(bytes.Buffer)
-	err := json.NewEncoder(todoW).Encode(&todo)
+	todoW, err := createTodoBodyHelper()
 	if err != nil {
-		t.Errorf("Error marshalling todo: %v", err)
+		t.Errorf("Error creating todo: %v", err)
 	}
 	req, err := http.NewRequest("PUT", "/todos/1", todoW)
 	if err != nil {
@@ -118,13 +122,13 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	req, err := http.NewRequest("DELETE", "/todos/1", nil)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	res, err := app.Test(req)
 	if err != nil {
-		fmt.Println(err)
+		t.Error(err)
 	}
 	if res.StatusCode != http.StatusNoContent {
-		fmt.Println("Expected status code 200, got", res.StatusCode)
+		t.Errorf("Expected status code 200, got %d", res.StatusCode)
 	}
 }
