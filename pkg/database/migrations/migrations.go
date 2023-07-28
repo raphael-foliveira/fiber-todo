@@ -1,5 +1,4 @@
-package database
-
+package migrations
 
 var Schema = `
 CREATE TABLE IF NOT EXISTS todo (
@@ -10,5 +9,4 @@ CREATE TABLE IF NOT EXISTS todo (
 );
 `
 
-var Migrations = []string{
-}
+var Migrations = []string{}

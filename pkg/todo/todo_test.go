@@ -36,7 +36,7 @@ func TestMain(m *testing.M) {
 	}
 	db = database.MustGetDatabase(os.Getenv("TEST_DATABASE_URL"))
 	db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
-	db.Migrate("../database/schema.sql")
+	db.Migrate()
 	db.Exec("INSERT INTO todo (title, description, completed) VALUES ('test', 'test', false), ('test2', 'test2', false)")
 	app = fiber.New()
 	group := app.Group("/todos")
@@ -60,7 +60,6 @@ func TestCreate(t *testing.T) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	res, err := app.Test(req)
-	
 	if err != nil {
 		t.Errorf("Error sending request: %v", err)
 	}
