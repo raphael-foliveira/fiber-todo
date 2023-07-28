@@ -1,13 +1,15 @@
 package todo
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type ITodoRepository interface {
 	Create(todo TodoDto) (int, error)
 	List() ([]Todo, error)
 	Retrieve(id int) (Todo, error)
 	Update(todo Todo) (Todo, error)
-	Delete(id int) error
+	Delete(id int) (int64, error)
 }
 
 type TodoRepository struct {
@@ -70,7 +72,10 @@ func (tr *TodoRepository) Update(todo Todo) (Todo, error) {
 	return todo, nil
 }
 
-func (tr *TodoRepository) Delete(id int) error {
-	_, err := tr.Db.Exec("DELETE FROM todo WHERE id = $1", id)
-	return err
+func (tr *TodoRepository) Delete(id int) (int64, error) {
+	result, err := tr.Db.Exec("DELETE FROM todo WHERE id = $1", id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

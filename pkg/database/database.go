@@ -9,12 +9,10 @@ import (
 )
 
 func GetDatabase(url string) (*Database, error) {
-	fmt.Println(url)
 	db, err := sql.Open("postgres", url)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("connected to the database")
 	return &Database{DB: db}, nil
 }
 
@@ -32,22 +30,16 @@ type Database struct {
 }
 
 func (db *Database) Migrate() {
-	fmt.Println("running migrations...")
-	fmt.Println("schema:")
-	fmt.Println(migrations.Schema)
 	_, err := db.Exec(migrations.Schema)
 	if err != nil {
 		fmt.Println("error creating schema")
 		panic(err)
 	}
-
 	for _, migration := range migrations.Migrations {
-		fmt.Println(migration)
 		_, err := db.Exec(migration)
 		if err != nil {
 			fmt.Println("error running migrations")
 			panic(err)
 		}
 	}
-	fmt.Println("created tables")
 }

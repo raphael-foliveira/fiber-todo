@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 	"github.com/raphael-foliveira/fiber-todo/pkg/database"
+	"github.com/raphael-foliveira/fiber-todo/pkg/database/queries"
 )
 
 var db *database.Database
@@ -27,6 +28,19 @@ func createTodoBodyHelper() (*bytes.Buffer, error) {
 	}
 	return todoW, err
 }
+func setup() {
+	db = database.MustGetDatabase(os.Getenv("TEST_DATABASE_URL"))
+	db.Exec(queries.RecreateSchema)
+	db.Migrate()
+	db.Exec(queries.InsertTodoFixtures)
+	app = fiber.New()
+	group := app.Group("/todos")
+	GetTodoRoutes(group, db.DB)
+}
+
+func teardown() {
+	db.Exec(queries.ClearTodoTable)
+}
 
 func TestMain(m *testing.M) {
 	fmt.Println("running tests...")
@@ -34,22 +48,13 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		panic(err)
 	}
-	db = database.MustGetDatabase(os.Getenv("TEST_DATABASE_URL"))
-	db.Exec("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
-	db.Migrate()
-	db.Exec("INSERT INTO todo (title, description, completed) VALUES ('test', 'test', false), ('test2', 'test2', false)")
-	app = fiber.New()
-	group := app.Group("/todos")
-	GetTodoRoutes(group, db.DB)
-
 	code := m.Run()
-
-	db.Exec("DELETE FROM todo")
-
 	os.Exit(code)
 }
 
 func TestCreate(t *testing.T) {
+	setup()
+	defer teardown()
 	todoW, err := createTodoBodyHelper()
 	if err != nil {
 		t.Errorf("Error creating todo: %v", err)
@@ -69,7 +74,59 @@ func TestCreate(t *testing.T) {
 	}
 }
 
+func TestCreateInvalid(t *testing.T) {
+	setup()
+	defer teardown()
+	todoW, err := createTodoBodyHelper()
+	if err != nil {
+		t.Errorf("Error creating todo: %v", err)
+	}
+	todoW.WriteString("invalid")
+	req, err := http.NewRequest("POST", "/todos", todoW)
+	if err != nil {
+		t.Errorf("Error creating request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := app.Test(req)
+	if err != nil {
+		t.Errorf("Error sending request: %v", err)
+	}
+
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status code %v, got %v", http.StatusBadRequest, res.StatusCode)
+	}
+}
+
+func TestCreateConflict(t *testing.T) {
+	setup()
+	defer teardown()
+	todo := Todo{
+		Title:       "test2",
+		Description: "test2",
+		Completed:   false,
+	}
+	todoW, err := json.Marshal(todo)
+	if err != nil {
+		t.Errorf("Error creating todo: %v", err)
+	}
+	req, err := http.NewRequest("POST", "/todos", bytes.NewBuffer(todoW))
+	if err != nil {
+		t.Errorf("Error creating request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	res, err := app.Test(req)
+	if err != nil {
+		t.Errorf("Error sending request: %v", err)
+	}
+
+	if res.StatusCode != http.StatusConflict {
+		t.Errorf("Expected status code %v, got %v", http.StatusConflict, res.StatusCode)
+	}
+}
+
 func TestList(t *testing.T) {
+	setup()
+	defer teardown()
 	req, err := http.NewRequest("GET", "/todos", nil)
 	if err != nil {
 		t.Error(err)
@@ -83,7 +140,26 @@ func TestList(t *testing.T) {
 	}
 }
 
+func TestListFail(t *testing.T) {
+	setup()
+	defer teardown()
+	db.Close()
+	req, err := http.NewRequest("GET", "/todos", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	res, err := app.Test(req)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != http.StatusInternalServerError {
+		t.Errorf("Expected status code 500, got %d", res.StatusCode)
+	}
+}
+
 func TestRetrieve(t *testing.T) {
+	setup()
+	defer teardown()
 	req, err := http.NewRequest("GET", "/todos/1", nil)
 	if err != nil {
 		t.Error(err)
@@ -97,7 +173,41 @@ func TestRetrieve(t *testing.T) {
 	}
 }
 
+func TestRetrieveInvalidId(t *testing.T) {
+	setup()
+	defer teardown()
+	req, err := http.NewRequest("GET", "/todos/invalid", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	res, err := app.Test(req)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("Expected status code 422, got %d", res.StatusCode)
+	}
+}
+
+func TestRetrieveNotFound(t *testing.T) {
+	setup()
+	defer teardown()
+	req, err := http.NewRequest("GET", "/todos/999", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	res, err := app.Test(req)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status code 404, got %d", res.StatusCode)
+	}
+}
+
 func TestUpdate(t *testing.T) {
+	setup()
+	defer teardown()
 	todoW, err := createTodoBodyHelper()
 	if err != nil {
 		t.Errorf("Error creating todo: %v", err)
@@ -118,7 +228,103 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
+func TestUpdateInvalid(t *testing.T) {
+	setup()
+	defer teardown()
+	todoW, err := createTodoBodyHelper()
+	if err != nil {
+		t.Errorf("Error creating todo: %v", err)
+	}
+	todoW.WriteString("invalid")
+	req, err := http.NewRequest("PUT", "/todos/1", todoW)
+	if err != nil {
+		t.Errorf("Error creating request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := app.Test(req)
+	if err != nil {
+		t.Errorf("Error sending request: %v", err)
+	}
+
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("Expected status code %v, got %v", http.StatusBadRequest, res.StatusCode)
+	}
+}
+
+func TestUpdateInvalidId(t *testing.T) {
+	setup()
+	defer teardown()
+	todoW, err := createTodoBodyHelper()
+	if err != nil {
+		t.Errorf("Error creating todo: %v", err)
+	}
+	req, err := http.NewRequest("PUT", "/todos/invalid", todoW)
+	if err != nil {
+		t.Errorf("Error creating request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := app.Test(req)
+	if err != nil {
+		t.Errorf("Error sending request: %v", err)
+	}
+
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("Expected status code %v, got %v", http.StatusUnprocessableEntity, res.StatusCode)
+	}
+}
+
+func TestUpdateNonExisting(t *testing.T) {
+	setup()
+	defer teardown()
+	todoW, err := createTodoBodyHelper()
+	if err != nil {
+		t.Errorf("Error creating todo: %v", err)
+	}
+	req, err := http.NewRequest("PUT", "/todos/999", todoW)
+	if err != nil {
+		t.Errorf("Error creating request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := app.Test(req)
+	if err != nil {
+		t.Errorf("Error sending request: %v", err)
+	}
+
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status code %v, got %v", http.StatusNotFound, res.StatusCode)
+	}
+}
+
+func TestUpdateFail(t *testing.T) {
+	setup()
+	defer teardown()
+	db.Close()
+	todoW, err := createTodoBodyHelper()
+	if err != nil {
+		t.Errorf("Error creating todo: %v", err)
+	}
+	req, err := http.NewRequest("PUT", "/todos/1", todoW)
+	if err != nil {
+		t.Errorf("Error creating request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	res, err := app.Test(req)
+	if err != nil {
+		t.Errorf("Error sending request: %v", err)
+	}
+
+	if res.StatusCode != http.StatusInternalServerError {
+		t.Errorf("Expected status code %v, got %v", http.StatusInternalServerError, res.StatusCode)
+	}
+}
+
 func TestDelete(t *testing.T) {
+	setup()
+	defer teardown()
 	req, err := http.NewRequest("DELETE", "/todos/1", nil)
 	if err != nil {
 		t.Error(err)
@@ -129,5 +335,37 @@ func TestDelete(t *testing.T) {
 	}
 	if res.StatusCode != http.StatusNoContent {
 		t.Errorf("Expected status code 200, got %d", res.StatusCode)
+	}
+}
+
+func TestDeleteInvalidId(t *testing.T) {
+	setup()
+	defer teardown()
+	req, err := http.NewRequest("DELETE", "/todos/invalid", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	res, err := app.Test(req)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != http.StatusUnprocessableEntity {
+		t.Errorf("Expected status code 422, got %d", res.StatusCode)
+	}
+}
+
+func TestDeleteNotFound(t *testing.T) {
+	setup()
+	defer teardown()
+	req, err := http.NewRequest("DELETE", "/todos/999", nil)
+	if err != nil {
+		t.Error(err)
+	}
+	res, err := app.Test(req)
+	if err != nil {
+		t.Error(err)
+	}
+	if res.StatusCode != http.StatusNotFound {
+		t.Errorf("Expected status code 404, got %d", res.StatusCode)
 	}
 }
