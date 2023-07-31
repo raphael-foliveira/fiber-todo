@@ -44,19 +44,8 @@ func teardown() {
 }
 
 func TestMain(m *testing.M) {
-	cfgB, err := os.ReadFile("../../config_test.json")
-	if err != nil {
-		panic(err)
-	}
-	err = json.Unmarshal(cfgB, &config)
-	if err != nil {
-		panic(err)
-	}
-
+	config = common.ReadTestCfg()
 	fmt.Println("running tests...")
-	if err != nil {
-		panic(err)
-	}
 	code := m.Run()
 	os.Exit(code)
 }
