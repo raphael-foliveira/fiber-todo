@@ -5,7 +5,7 @@ import (
 )
 
 type ITodoRepository interface {
-	Create(todo TodoDto) (int, error)
+	Create(todo TodoDto) (Todo, error)
 	List() ([]Todo, error)
 	Retrieve(id int) (Todo, error)
 	Update(todo Todo) (Todo, error)
@@ -20,12 +20,12 @@ func NewTodoRepository(db *sql.DB) *TodoRepository {
 	return &TodoRepository{Db: db}
 }
 
-func (tr *TodoRepository) Create(todo TodoDto) (int, error) {
-	row := tr.Db.QueryRow("INSERT INTO todo (title, description, completed) VALUES ($1, $2, $3) RETURNING id",
+func (tr *TodoRepository) Create(todo TodoDto) (Todo, error) {
+	row := tr.Db.QueryRow("INSERT INTO todo (title, description, completed) VALUES ($1, $2, $3) RETURNING id, title, description, completed",
 		todo.Title, todo.Description, todo.Completed)
-	var id int
-	err := row.Scan(&id)
-	return id, err
+	var createdTodo Todo
+	err := row.Scan(&createdTodo.Id, &createdTodo.Title, &createdTodo.Description, &createdTodo.Completed)
+	return createdTodo, err
 }
 
 func (tr *TodoRepository) List() ([]Todo, error) {

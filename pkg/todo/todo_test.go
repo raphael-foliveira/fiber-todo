@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"testing"
@@ -112,6 +113,13 @@ func TestCreate(t *testing.T) {
 			}
 			if res.StatusCode != test.expectStatus {
 				t.Errorf("Expected status code %v, got %v", test.expectStatus, res.StatusCode)
+			}
+			resBody, err := io.ReadAll(res.Body)
+			if err != nil {
+				t.Errorf("Error reading response body: %v", err)
+			}
+			if string(resBody) != test.expectResponseBody {
+				t.Errorf("Expected response body %v, got %v", test.expectResponseBody, string(resBody))
 			}
 		})
 	}

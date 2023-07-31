@@ -32,12 +32,12 @@ func (tc *TodoController) Create(c *fiber.Ctx) error {
 		fmt.Println(err)
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
-	id, err := tc.repository.Create(todo)
+	createdTodo, err := tc.repository.Create(todo)
 	if err != nil {
 		fmt.Println(err)
 		return c.SendStatus(fiber.StatusConflict)
 	}
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
+	return c.Status(fiber.StatusCreated).JSON(createdTodo)
 }
 
 // @List godoc
