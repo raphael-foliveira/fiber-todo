@@ -125,7 +125,6 @@ func (tc *TodoController) Update(c *fiber.Ctx) (err error) {
 // @Router /todos/{id} [delete]
 func (tc *TodoController) Delete(c *fiber.Ctx) error {
 	intId, err := common.ParseIdFromParams(c)
-	fmt.Println("intId", intId)
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnprocessableEntity)
 	}

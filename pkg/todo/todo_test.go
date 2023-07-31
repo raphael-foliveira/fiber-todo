@@ -15,6 +15,13 @@ import (
 	"github.com/raphael-foliveira/fiber-todo/pkg/database/queries"
 )
 
+type todoTest struct {
+	name         string
+	modifier     func(*bytes.Buffer)
+	urlFunc      func() string
+	expectStatus int
+}
+
 var db *database.Database
 var app *fiber.App
 var config common.Config
@@ -51,248 +58,201 @@ func TestMain(m *testing.M) {
 }
 
 func TestCreate(t *testing.T) {
-	setup()
-	defer teardown()
-	todoW, err := createTodoBodyHelper()
-	if err != nil {
-		t.Errorf("Error creating todo: %v", err)
+	tests := []todoTest{
+		{
+			name:         "create valid todo",
+			expectStatus: 201,
+			urlFunc:      func() string { return "/todos" },
+			modifier:     func(todoW *bytes.Buffer) {},
+		},
+		{
+			name:         "create invalid todo",
+			expectStatus: 400,
+			urlFunc:      func() string { return "/todos" },
+			modifier: func(b *bytes.Buffer) {
+				b.Reset()
+				b.WriteString("invalid")
+			},
+		},
+		{
+			name:         "create conflicting todo",
+			expectStatus: 409,
+			urlFunc:      func() string { return "/todos" },
+			modifier: func(b *bytes.Buffer) {
+				b.Reset()
+				todo := Todo{
+					Title:       "test2",
+					Description: "Test",
+					Completed:   false,
+				}
+				err := json.NewEncoder(b).Encode(&todo)
+				if err != nil {
+					t.Errorf("Error encoding todo: %v", err)
+				}
+			},
+		},
 	}
-	req, err := http.NewRequest("POST", "/todos", todoW)
-	if err != nil {
-		t.Errorf("Error creating request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := app.Test(req)
-	if err != nil {
-		t.Errorf("Error sending request: %v", err)
-	}
-
-	if res.StatusCode != http.StatusCreated {
-		t.Errorf("Expected status code %v, got %v", http.StatusCreated, res.StatusCode)
-	}
-}
-
-func TestCreateInvalid(t *testing.T) {
-	setup()
-	defer teardown()
-	todoW, err := createTodoBodyHelper()
-	if err != nil {
-		t.Errorf("Error creating todo: %v", err)
-	}
-	todoW.WriteString("invalid")
-	req, err := http.NewRequest("POST", "/todos", todoW)
-	if err != nil {
-		t.Errorf("Error creating request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := app.Test(req)
-	if err != nil {
-		t.Errorf("Error sending request: %v", err)
-	}
-
-	if res.StatusCode != http.StatusBadRequest {
-		t.Errorf("Expected status code %v, got %v", http.StatusBadRequest, res.StatusCode)
-	}
-}
-
-func TestCreateConflict(t *testing.T) {
-	setup()
-	defer teardown()
-	todo := Todo{
-		Title:       "test2",
-		Description: "test2",
-		Completed:   false,
-	}
-	todoW, err := json.Marshal(todo)
-	if err != nil {
-		t.Errorf("Error creating todo: %v", err)
-	}
-	req, err := http.NewRequest("POST", "/todos", bytes.NewBuffer(todoW))
-	if err != nil {
-		t.Errorf("Error creating request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	res, err := app.Test(req)
-	if err != nil {
-		t.Errorf("Error sending request: %v", err)
-	}
-
-	if res.StatusCode != http.StatusConflict {
-		t.Errorf("Expected status code %v, got %v", http.StatusConflict, res.StatusCode)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+			todoW, err := createTodoBodyHelper()
+			if err != nil {
+				t.Errorf("Error creating todo: %v", err)
+			}
+			test.modifier(todoW)
+			req, err := http.NewRequest("POST", test.urlFunc(), todoW)
+			if err != nil {
+				t.Errorf("Error creating request: %v", err)
+			}
+			req.Header.Set("Content-Type", "application/json")
+			res, err := app.Test(req)
+			if err != nil {
+				t.Errorf("Error sending request: %v", err)
+			}
+			if res.StatusCode != test.expectStatus {
+				t.Errorf("Expected status code %v, got %v", test.expectStatus, res.StatusCode)
+			}
+		})
 	}
 }
 
 func TestList(t *testing.T) {
-	setup()
-	defer teardown()
-	req, err := http.NewRequest("GET", "/todos", nil)
-	if err != nil {
-		t.Error(err)
+	tests := []todoTest{
+		{
+			name:         "test list",
+			expectStatus: 200,
+			modifier:     func(b *bytes.Buffer) {},
+			urlFunc:      func() string { return "/todos" },
+		},
+		{
+			name:         "test list fail",
+			expectStatus: 500,
+			modifier: func(b *bytes.Buffer) {
+				db.Close()
+			},
+			urlFunc: func() string { return "/todos" },
+		},
 	}
-	res, err := app.Test(req)
-	if err != nil {
-		t.Error(err)
-	}
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code 200, got %d", res.StatusCode)
-	}
-}
-
-func TestListFail(t *testing.T) {
-	setup()
-	defer teardown()
-	db.Close()
-	req, err := http.NewRequest("GET", "/todos", nil)
-	if err != nil {
-		t.Error(err)
-	}
-	res, err := app.Test(req)
-	if err != nil {
-		t.Error(err)
-	}
-	if res.StatusCode != http.StatusInternalServerError {
-		t.Errorf("Expected status code 500, got %d", res.StatusCode)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+			test.modifier(new(bytes.Buffer))
+			req, err := http.NewRequest("GET", test.urlFunc(), nil)
+			if err != nil {
+				t.Error(err)
+			}
+			res, err := app.Test(req)
+			if err != nil {
+				t.Error(err)
+			}
+			if res.StatusCode != test.expectStatus {
+				t.Errorf("Expected status code %v, got %v", test.expectStatus, res.StatusCode)
+			}
+		})
 	}
 }
 
 func TestRetrieve(t *testing.T) {
-	setup()
-	defer teardown()
-	req, err := http.NewRequest("GET", "/todos/1", nil)
-	if err != nil {
-		t.Error(err)
+	var tests = []todoTest{
+		{
+			name:         "test retrieve",
+			modifier:     func(b *bytes.Buffer) {},
+			expectStatus: 200,
+			urlFunc:      func() string { return "/todos/1" },
+		},
+		{
+			name:         "test retrieve invalid",
+			modifier:     func(b *bytes.Buffer) {},
+			expectStatus: 422,
+			urlFunc:      func() string { return "/todos/invalid" },
+		},
+		{
+			name:         "test retrieve non existing",
+			modifier:     func(b *bytes.Buffer) {},
+			expectStatus: 404,
+			urlFunc:      func() string { return "/todos/999" },
+		},
 	}
-	res, err := app.Test(req)
-	if err != nil {
-		t.Error(err)
-	}
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code 200, got %d", res.StatusCode)
-	}
-}
 
-func TestRetrieveInvalidId(t *testing.T) {
-	setup()
-	defer teardown()
-	req, err := http.NewRequest("GET", "/todos/invalid", nil)
-	if err != nil {
-		t.Error(err)
-	}
-	res, err := app.Test(req)
-	if err != nil {
-		t.Error(err)
-	}
-	if res.StatusCode != http.StatusUnprocessableEntity {
-		t.Errorf("Expected status code 422, got %d", res.StatusCode)
-	}
-}
-
-func TestRetrieveNotFound(t *testing.T) {
-	setup()
-	defer teardown()
-	req, err := http.NewRequest("GET", "/todos/999", nil)
-	if err != nil {
-		t.Error(err)
-	}
-	res, err := app.Test(req)
-	if err != nil {
-		t.Error(err)
-	}
-	if res.StatusCode != http.StatusNotFound {
-		t.Errorf("Expected status code 404, got %d", res.StatusCode)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+			b := new(bytes.Buffer)
+			test.modifier(b)
+			req, err := http.NewRequest("GET", test.urlFunc(), nil)
+			if err != nil {
+				t.Error(err)
+			}
+			res, err := app.Test(req)
+			if err != nil {
+				t.Error(err)
+			}
+			if res.StatusCode != test.expectStatus {
+				t.Errorf("Expected status code %v, got %v", test.expectStatus, res.StatusCode)
+			}
+		})
 	}
 }
 
 func TestUpdate(t *testing.T) {
-	setup()
-	defer teardown()
-	todoW, err := createTodoBodyHelper()
-	if err != nil {
-		t.Errorf("Error creating todo: %v", err)
-	}
-	req, err := http.NewRequest("PUT", "/todos/1", todoW)
-	if err != nil {
-		t.Errorf("Error creating request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := app.Test(req)
-	if err != nil {
-		t.Errorf("Error sending request: %v", err)
-	}
-
-	if res.StatusCode != http.StatusOK {
-		t.Errorf("Expected status code %v, got %v", http.StatusOK, res.StatusCode)
-	}
-}
-
-func TestUpdateInvalid(t *testing.T) {
-	setup()
-	defer teardown()
-	todoW, err := createTodoBodyHelper()
-	if err != nil {
-		t.Errorf("Error creating todo: %v", err)
-	}
-	todoW.WriteString("invalid")
-	req, err := http.NewRequest("PUT", "/todos/1", todoW)
-	if err != nil {
-		t.Errorf("Error creating request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := app.Test(req)
-	if err != nil {
-		t.Errorf("Error sending request: %v", err)
+	tests := []todoTest{
+		{
+			name: "test update",
+			modifier: func(b *bytes.Buffer) {
+			},
+			expectStatus: 200,
+			urlFunc:      func() string { return "/todos/1" },
+		},
+		{
+			name: "test update invalid",
+			modifier: func(b *bytes.Buffer) {
+				b.Reset()
+				b.WriteString("invalid")
+			},
+			expectStatus: 400,
+			urlFunc:      func() string { return "/todos/1" },
+		},
+		{
+			name:         "test update invalid id",
+			modifier:     func(b *bytes.Buffer) {},
+			expectStatus: 422,
+			urlFunc:      func() string { return "/todos/invalid" },
+		},
+		{
+			name:         "test update non existing",
+			modifier:     func(b *bytes.Buffer) {},
+			expectStatus: 404,
+			urlFunc:      func() string { return "/todos/999" },
+		},
 	}
 
-	if res.StatusCode != http.StatusBadRequest {
-		t.Errorf("Expected status code %v, got %v", http.StatusBadRequest, res.StatusCode)
-	}
-}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+			todoW, err := createTodoBodyHelper()
+			if err != nil {
+				t.Errorf("Error creating todo: %v", err)
+			}
+			test.modifier(todoW)
+			req, err := http.NewRequest("PUT", test.urlFunc(), todoW)
+			if err != nil {
+				t.Errorf("Error creating request: %v", err)
+			}
+			req.Header.Set("Content-Type", "application/json")
 
-func TestUpdateInvalidId(t *testing.T) {
-	setup()
-	defer teardown()
-	todoW, err := createTodoBodyHelper()
-	if err != nil {
-		t.Errorf("Error creating todo: %v", err)
-	}
-	req, err := http.NewRequest("PUT", "/todos/invalid", todoW)
-	if err != nil {
-		t.Errorf("Error creating request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
+			res, err := app.Test(req)
+			if err != nil {
+				t.Errorf("Error sending request: %v", err)
+			}
 
-	res, err := app.Test(req)
-	if err != nil {
-		t.Errorf("Error sending request: %v", err)
-	}
-
-	if res.StatusCode != http.StatusUnprocessableEntity {
-		t.Errorf("Expected status code %v, got %v", http.StatusUnprocessableEntity, res.StatusCode)
-	}
-}
-
-func TestUpdateNonExisting(t *testing.T) {
-	setup()
-	defer teardown()
-	todoW, err := createTodoBodyHelper()
-	if err != nil {
-		t.Errorf("Error creating todo: %v", err)
-	}
-	req, err := http.NewRequest("PUT", "/todos/999", todoW)
-	if err != nil {
-		t.Errorf("Error creating request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := app.Test(req)
-	if err != nil {
-		t.Errorf("Error sending request: %v", err)
-	}
-
-	if res.StatusCode != http.StatusNotFound {
-		t.Errorf("Expected status code %v, got %v", http.StatusNotFound, res.StatusCode)
+			if res.StatusCode != test.expectStatus {
+				t.Errorf("Expected status code %v, got %v", test.expectStatus, res.StatusCode)
+			}
+		})
 	}
 }
 
@@ -321,49 +281,44 @@ func TestUpdateFail(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	setup()
-	defer teardown()
-	req, err := http.NewRequest("DELETE", "/todos/1", nil)
-	if err != nil {
-		t.Error(err)
+	tests := []todoTest{
+		{
+			name:         "test delete",
+			modifier:     func(b *bytes.Buffer) {},
+			urlFunc:      func() string { return "/todos/1" },
+			expectStatus: 204,
+		},
+		{
+			name:         "test delete invalid",
+			modifier:     func(b *bytes.Buffer) {},
+			urlFunc:      func() string { return "/todos/invalid" },
+			expectStatus: 422,
+		},
+		{
+			name:         "test delete non existing",
+			modifier:     func(b *bytes.Buffer) {},
+			urlFunc:      func() string { return "/todos/999" },
+			expectStatus: 404,
+		},
 	}
-	res, err := app.Test(req)
-	if err != nil {
-		t.Error(err)
-	}
-	if res.StatusCode != http.StatusNoContent {
-		t.Errorf("Expected status code 200, got %d", res.StatusCode)
-	}
-}
 
-func TestDeleteInvalidId(t *testing.T) {
-	setup()
-	defer teardown()
-	req, err := http.NewRequest("DELETE", "/todos/invalid", nil)
-	if err != nil {
-		t.Error(err)
-	}
-	res, err := app.Test(req)
-	if err != nil {
-		t.Error(err)
-	}
-	if res.StatusCode != http.StatusUnprocessableEntity {
-		t.Errorf("Expected status code 422, got %d", res.StatusCode)
-	}
-}
-
-func TestDeleteNotFound(t *testing.T) {
-	setup()
-	defer teardown()
-	req, err := http.NewRequest("DELETE", "/todos/999", nil)
-	if err != nil {
-		t.Error(err)
-	}
-	res, err := app.Test(req)
-	if err != nil {
-		t.Error(err)
-	}
-	if res.StatusCode != http.StatusNotFound {
-		t.Errorf("Expected status code 404, got %d", res.StatusCode)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			setup()
+			defer teardown()
+			b := new(bytes.Buffer)
+			test.modifier(b)
+			req, err := http.NewRequest("DELETE", test.urlFunc(), nil)
+			if err != nil {
+				t.Error(err)
+			}
+			res, err := app.Test(req)
+			if err != nil {
+				t.Error(err)
+			}
+			if res.StatusCode != test.expectStatus {
+				t.Errorf("Expected status code %v, got %v", test.expectStatus, res.StatusCode)
+			}
+		})
 	}
 }
