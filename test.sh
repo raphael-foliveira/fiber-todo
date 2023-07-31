@@ -1,4 +1,4 @@
 #!/bin/bash
 
-go test -coverprofile=c.out ./... &&
-go tool cover -func=c.out;
+go test -coverprofile=c.out ./pkg/todo ./pkg/common &&
+go tool cover -html=c.out;

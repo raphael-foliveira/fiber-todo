@@ -227,6 +227,14 @@ func TestUpdate(t *testing.T) {
 			expectStatus: 404,
 			urlFunc:      func() string { return "/todos/999" },
 		},
+		{
+			name: "test update fail",
+			modifier: func(b *bytes.Buffer) {
+				db.Close()
+			},
+			expectStatus: 500,
+			urlFunc:      func() string { return "/todos/1" },
+		},
 	}
 
 	for _, test := range tests {
@@ -256,30 +264,6 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
-func TestUpdateFail(t *testing.T) {
-	setup()
-	defer teardown()
-	db.Close()
-	todoW, err := createTodoBodyHelper()
-	if err != nil {
-		t.Errorf("Error creating todo: %v", err)
-	}
-	req, err := http.NewRequest("PUT", "/todos/1", todoW)
-	if err != nil {
-		t.Errorf("Error creating request: %v", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	res, err := app.Test(req)
-	if err != nil {
-		t.Errorf("Error sending request: %v", err)
-	}
-
-	if res.StatusCode != http.StatusInternalServerError {
-		t.Errorf("Expected status code %v, got %v", http.StatusInternalServerError, res.StatusCode)
-	}
-}
-
 func TestDelete(t *testing.T) {
 	tests := []todoTest{
 		{
@@ -299,6 +283,14 @@ func TestDelete(t *testing.T) {
 			modifier:     func(b *bytes.Buffer) {},
 			urlFunc:      func() string { return "/todos/999" },
 			expectStatus: 404,
+		},
+		{
+			name: "test delete fail",
+			modifier: func(b *bytes.Buffer) {
+				db.Close()
+			},
+			urlFunc:      func() string { return "/todos/1" },
+			expectStatus: 500,
 		},
 	}
 
