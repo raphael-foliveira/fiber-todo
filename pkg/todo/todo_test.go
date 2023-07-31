@@ -15,16 +15,16 @@ import (
 	"github.com/raphael-foliveira/fiber-todo/pkg/database/queries"
 )
 
+var db *database.Database
+var app *fiber.App
+var config common.Config
+
 type todoTest struct {
 	name         string
 	modifier     func(*bytes.Buffer)
 	urlFunc      func() string
 	expectStatus int
 }
-
-var db *database.Database
-var app *fiber.App
-var config common.Config
 
 func createTodoBodyHelper() (*bytes.Buffer, error) {
 	var todo Todo
@@ -267,30 +267,30 @@ func TestUpdate(t *testing.T) {
 func TestDelete(t *testing.T) {
 	tests := []todoTest{
 		{
-			name:         "test delete",
-			modifier:     func(b *bytes.Buffer) {},
-			urlFunc:      func() string { return "/todos/1" },
-			expectStatus: 204,
+			"test delete",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos/1" },
+			204,
 		},
 		{
-			name:         "test delete invalid",
-			modifier:     func(b *bytes.Buffer) {},
-			urlFunc:      func() string { return "/todos/invalid" },
-			expectStatus: 422,
+			"test delete invalid",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos/invalid" },
+			422,
 		},
 		{
-			name:         "test delete non existing",
-			modifier:     func(b *bytes.Buffer) {},
-			urlFunc:      func() string { return "/todos/999" },
-			expectStatus: 404,
+			"test delete non existing",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos/999" },
+			404,
 		},
 		{
-			name: "test delete fail",
-			modifier: func(b *bytes.Buffer) {
+			"test delete fail",
+			func(b *bytes.Buffer) {
 				db.Close()
 			},
-			urlFunc:      func() string { return "/todos/1" },
-			expectStatus: 500,
+			func() string { return "/todos/1" },
+			500,
 		},
 	}
 
