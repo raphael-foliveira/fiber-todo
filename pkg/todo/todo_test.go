@@ -10,13 +10,14 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofiber/fiber/v2"
-	"github.com/joho/godotenv"
+	"github.com/raphael-foliveira/fiber-todo/pkg/common"
 	"github.com/raphael-foliveira/fiber-todo/pkg/database"
 	"github.com/raphael-foliveira/fiber-todo/pkg/database/queries"
 )
 
 var db *database.Database
 var app *fiber.App
+var config common.Config
 
 func createTodoBodyHelper() (*bytes.Buffer, error) {
 	var todo Todo
@@ -29,7 +30,7 @@ func createTodoBodyHelper() (*bytes.Buffer, error) {
 	return todoW, err
 }
 func setup() {
-	db = database.MustGetDatabase(os.Getenv("TEST_DATABASE_URL"))
+	db = database.MustGetDatabase(config.Database.Url)
 	db.Exec(queries.RecreateSchema)
 	db.Migrate()
 	db.Exec(queries.InsertTodoFixtures)
@@ -43,8 +44,16 @@ func teardown() {
 }
 
 func TestMain(m *testing.M) {
+	cfgB, err := os.ReadFile("../../config_test.json")
+	if err != nil {
+		panic(err)
+	}
+	err = json.Unmarshal(cfgB, &config)
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Println("running tests...")
-	err := godotenv.Load("../../.env")
 	if err != nil {
 		panic(err)
 	}

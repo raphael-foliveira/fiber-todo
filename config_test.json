@@ -1,0 +1,8 @@
+{
+    "database": {
+        "url": "postgres://postgres:postgres@localhost:5432/fiber_todo_test?sslmode=disable"
+    },
+    "app": {
+        "port": 3000
+    }
+}
