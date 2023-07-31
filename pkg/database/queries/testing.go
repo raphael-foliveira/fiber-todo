@@ -5,7 +5,7 @@ const RecreateSchema = `
 `
 
 const InsertTodoFixtures = `
-INSERT INTO todo (title, description, completed) VALUES ('test', 'test', false), ('test2', 'test2', false);
+	INSERT INTO todo (title, description, completed) VALUES ('test', 'test', false), ('test2', 'test2', false);
 `
 
 const ClearTodoTable = `
