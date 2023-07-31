@@ -60,25 +60,23 @@ func TestMain(m *testing.M) {
 func TestCreate(t *testing.T) {
 	tests := []todoTest{
 		{
-			name:         "create valid todo",
-			expectStatus: 201,
-			urlFunc:      func() string { return "/todos" },
-			modifier:     func(todoW *bytes.Buffer) {},
+			"create valid todo",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos" },
+			201,
 		},
 		{
-			name:         "create invalid todo",
-			expectStatus: 400,
-			urlFunc:      func() string { return "/todos" },
-			modifier: func(b *bytes.Buffer) {
+			"create invalid todo",
+			func(b *bytes.Buffer) {
 				b.Reset()
 				b.WriteString("invalid")
 			},
+			func() string { return "/todos" },
+			400,
 		},
 		{
-			name:         "create conflicting todo",
-			expectStatus: 409,
-			urlFunc:      func() string { return "/todos" },
-			modifier: func(b *bytes.Buffer) {
+			"create conflicting todo",
+			func(b *bytes.Buffer) {
 				b.Reset()
 				todo := Todo{
 					Title:       "test2",
@@ -90,6 +88,8 @@ func TestCreate(t *testing.T) {
 					t.Errorf("Error encoding todo: %v", err)
 				}
 			},
+			func() string { return "/todos" },
+			409,
 		},
 	}
 	for _, test := range tests {
@@ -120,18 +120,18 @@ func TestCreate(t *testing.T) {
 func TestList(t *testing.T) {
 	tests := []todoTest{
 		{
-			name:         "test list",
-			expectStatus: 200,
-			modifier:     func(b *bytes.Buffer) {},
-			urlFunc:      func() string { return "/todos" },
+			"test list",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos" },
+			200,
 		},
 		{
-			name:         "test list fail",
-			expectStatus: 500,
-			modifier: func(b *bytes.Buffer) {
+			"test list fail",
+			func(b *bytes.Buffer) {
 				db.Close()
 			},
-			urlFunc: func() string { return "/todos" },
+			func() string { return "/todos" },
+			500,
 		},
 	}
 	for _, test := range tests {
@@ -157,22 +157,22 @@ func TestList(t *testing.T) {
 func TestRetrieve(t *testing.T) {
 	var tests = []todoTest{
 		{
-			name:         "test retrieve",
-			modifier:     func(b *bytes.Buffer) {},
-			expectStatus: 200,
-			urlFunc:      func() string { return "/todos/1" },
+			"test retrieve",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos/1" },
+			200,
 		},
 		{
-			name:         "test retrieve invalid",
-			modifier:     func(b *bytes.Buffer) {},
-			expectStatus: 422,
-			urlFunc:      func() string { return "/todos/invalid" },
+			"test retrieve invalid",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos/invalid" },
+			422,
 		},
 		{
-			name:         "test retrieve non existing",
-			modifier:     func(b *bytes.Buffer) {},
-			expectStatus: 404,
-			urlFunc:      func() string { return "/todos/999" },
+			"test retrieve non existing",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos/999" },
+			404,
 		},
 	}
 
@@ -200,40 +200,40 @@ func TestRetrieve(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	tests := []todoTest{
 		{
-			name: "test update",
-			modifier: func(b *bytes.Buffer) {
+			"test update",
+			func(b *bytes.Buffer) {
 			},
-			expectStatus: 200,
-			urlFunc:      func() string { return "/todos/1" },
+			func() string { return "/todos/1" },
+			200,
 		},
 		{
-			name: "test update invalid",
-			modifier: func(b *bytes.Buffer) {
+			"test update invalid",
+			func(b *bytes.Buffer) {
 				b.Reset()
 				b.WriteString("invalid")
 			},
-			expectStatus: 400,
-			urlFunc:      func() string { return "/todos/1" },
+			func() string { return "/todos/1" },
+			400,
 		},
 		{
-			name:         "test update invalid id",
-			modifier:     func(b *bytes.Buffer) {},
-			expectStatus: 422,
-			urlFunc:      func() string { return "/todos/invalid" },
+			"test update invalid id",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos/invalid" },
+			422,
 		},
 		{
-			name:         "test update non existing",
-			modifier:     func(b *bytes.Buffer) {},
-			expectStatus: 404,
-			urlFunc:      func() string { return "/todos/999" },
+			"test update non existing",
+			func(b *bytes.Buffer) {},
+			func() string { return "/todos/999" },
+			404,
 		},
 		{
-			name: "test update fail",
-			modifier: func(b *bytes.Buffer) {
+			"test update fail",
+			func(b *bytes.Buffer) {
 				db.Close()
 			},
-			expectStatus: 500,
-			urlFunc:      func() string { return "/todos/1" },
+			func() string { return "/todos/1" },
+			500,
 		},
 	}
 
