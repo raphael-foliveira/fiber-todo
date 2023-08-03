@@ -1,13 +1,15 @@
 package todo
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
 type ITodoRepository interface {
-	Create(todo TodoDto) (int, error)
+	Create(todo TodoDto) (Todo, error)
 	List() ([]Todo, error)
 	Retrieve(id int) (Todo, error)
 	Update(todo Todo) (Todo, error)
-	Delete(id int) error
+	Delete(id int) (int64, error)
 }
 
 type TodoRepository struct {
@@ -18,12 +20,12 @@ func NewTodoRepository(db *sql.DB) *TodoRepository {
 	return &TodoRepository{Db: db}
 }
 
-func (tr *TodoRepository) Create(todo TodoDto) (int, error) {
-	row := tr.Db.QueryRow("INSERT INTO todo (title, description, completed) VALUES ($1, $2, $3) RETURNING id",
+func (tr *TodoRepository) Create(todo TodoDto) (Todo, error) {
+	row := tr.Db.QueryRow("INSERT INTO todo (title, description, completed) VALUES ($1, $2, $3) RETURNING id, title, description, completed",
 		todo.Title, todo.Description, todo.Completed)
-	var id int
-	err := row.Scan(&id)
-	return id, err
+	var createdTodo Todo
+	err := row.Scan(&createdTodo.Id, &createdTodo.Title, &createdTodo.Description, &createdTodo.Completed)
+	return createdTodo, err
 }
 
 func (tr *TodoRepository) List() ([]Todo, error) {
@@ -70,7 +72,10 @@ func (tr *TodoRepository) Update(todo Todo) (Todo, error) {
 	return todo, nil
 }
 
-func (tr *TodoRepository) Delete(id int) error {
-	_, err := tr.Db.Exec("DELETE FROM todo WHERE id = $1", id)
-	return err
+func (tr *TodoRepository) Delete(id int) (int64, error) {
+	result, err := tr.Db.Exec("DELETE FROM todo WHERE id = $1", id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

@@ -32,12 +32,12 @@ func (tc *TodoController) Create(c *fiber.Ctx) error {
 		fmt.Println(err)
 		return c.SendStatus(fiber.StatusBadRequest)
 	}
-	id, err := tc.repository.Create(todo)
+	createdTodo, err := tc.repository.Create(todo)
 	if err != nil {
 		fmt.Println(err)
 		return c.SendStatus(fiber.StatusConflict)
 	}
-	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"id": id})
+	return c.Status(fiber.StatusCreated).JSON(createdTodo)
 }
 
 // @List godoc
@@ -128,9 +128,12 @@ func (tc *TodoController) Delete(c *fiber.Ctx) error {
 	if err != nil {
 		return c.SendStatus(fiber.StatusUnprocessableEntity)
 	}
-	err = tc.repository.Delete(intId)
+	affected, err := tc.repository.Delete(intId)
 	if err != nil {
 		return c.SendStatus(fiber.StatusInternalServerError)
+	}
+	if affected == 0 {
+		return c.SendStatus(fiber.StatusNotFound)
 	}
 	return c.SendStatus(fiber.StatusNoContent)
 }

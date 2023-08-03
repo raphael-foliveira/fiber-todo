@@ -2,3 +2,5 @@
 tmp
 data
 coverage.out
+.vscode
+c.out
