@@ -3,6 +3,7 @@ package todo
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -10,20 +11,94 @@ import (
 
 	"github.com/go-faker/faker/v4"
 	"github.com/gofiber/fiber/v2"
-	"github.com/raphael-foliveira/fiber-todo/pkg/common"
-	"github.com/raphael-foliveira/fiber-todo/pkg/database"
-	"github.com/raphael-foliveira/fiber-todo/pkg/database/queries"
 )
 
-var db *database.Database
+// var db *database.Database
 var app *fiber.App
-var config common.Config
+var mr *mockRepository
 
 type todoTest struct {
 	name         string
 	modifier     func(*bytes.Buffer)
 	urlFunc      func() string
 	expectStatus int
+}
+
+type mockRepository struct {
+	todos      []Todo
+	shouldFail bool
+}
+
+func (mr *mockRepository) Create(todo TodoDto) (Todo, error) {
+	id := 0
+	for _, t := range mr.todos {
+		if t.Title == todo.Title {
+			return Todo{}, errors.New("todo already exists in mock repository")
+		}
+		id++
+	}
+	mr.todos = append(mr.todos, Todo{
+		Id:          id,
+		Title:       todo.Title,
+		Description: todo.Description,
+		Completed:   todo.Completed,
+	})
+	return Todo{}, nil
+}
+
+func (mr *mockRepository) List() ([]Todo, error) {
+	if mr.shouldFail {
+		return nil, errors.New("error listing todos")
+	}
+	return mr.todos, nil
+}
+
+func (mr *mockRepository) Retrieve(id int) (Todo, error) {
+	for _, todo := range mr.todos {
+		if todo.Id == id {
+			return todo, nil
+		}
+	}
+	return Todo{}, errors.New("todo not found in mock repository")
+}
+
+func (mr *mockRepository) Update(todo Todo) (Todo, error) {
+	if mr.shouldFail {
+		return Todo{}, errors.New("error updating todo")
+	}
+	for _, t := range mr.todos {
+		if t.Id == todo.Id {
+			fmt.Println(todo)
+			t.Title = todo.Title
+			t.Description = todo.Description
+			t.Completed = todo.Completed
+			return t, nil
+		}
+	}
+	return Todo{Id: 0}, nil
+}
+
+func (mr *mockRepository) Delete(id int) (int64, error) {
+	if mr.shouldFail {
+		return 0, errors.New("error deleting todo")
+	}
+	for i, t := range mr.todos {
+		if t.Id == id {
+			mr.todos = append(mr.todos[:i], mr.todos[i+1:]...)
+			return 1, nil
+		}
+	}
+	return 0, nil
+}
+
+func (mr *mockRepository) InsertFixtures() {
+	mr.todos = []Todo{}
+	for i := 0; i < 30; i++ {
+		var todo Todo
+		faker.FakeData(&todo)
+		todo.Id = i + 1
+		mr.todos = append(mr.todos, todo)
+	}
 }
 
 func createTodoBodyHelper() (*bytes.Buffer, error) {
@@ -36,25 +111,27 @@ func createTodoBodyHelper() (*bytes.Buffer, error) {
 	}
 	return todoW, err
 }
-func setup() {
-	db = database.MustGetDatabase(config.Database.Url)
-	db.Exec(queries.RecreateSchema)
-	db.Migrate()
-	db.Exec(queries.InsertTodoFixtures)
+func todoTestsSetup() {
+	// db = database.MustGetDatabase(config.Database.Url)
+	// db.Exec(queries.RecreateSchema)
+	// db.Migrate()
+	// db.Exec(queries.InsertTodoFixtures)
 	app = fiber.New()
 	group := app.Group("/todos")
-	GetTodoRoutes(group, db.DB)
+	mr = new(mockRepository)
+	controller := NewTodoController(mr)
+	mr.InsertFixtures()
+	GetTodoRoutes(group, controller)
 }
 
-func teardown() {
-	db.Exec(queries.ClearTodoTable)
+func todoTestsTeardown() {
+	mr.todos = []Todo{}
+	mr.shouldFail = false
 }
 
 func TestMain(m *testing.M) {
-	config = common.ReadTestCfg()
 	fmt.Println("running tests...")
-	code := m.Run()
-	os.Exit(code)
+	os.Exit(m.Run())
 }
 
 func TestCreate(t *testing.T) {
@@ -78,8 +155,9 @@ func TestCreate(t *testing.T) {
 			"create conflicting todo",
 			func(b *bytes.Buffer) {
 				b.Reset()
+				existingTodoTitle := mr.todos[0].Title
 				todo := Todo{
-					Title:       "test2",
+					Title:       existingTodoTitle,
 					Description: "Test",
 					Completed:   false,
 				}
@@ -94,8 +172,8 @@ func TestCreate(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			setup()
-			defer teardown()
+			todoTestsSetup()
+			defer todoTestsTeardown()
 			todoW, err := createTodoBodyHelper()
 			if err != nil {
 				t.Errorf("Error creating todo: %v", err)
@@ -128,7 +206,7 @@ func TestList(t *testing.T) {
 		{
 			"test list fail",
 			func(b *bytes.Buffer) {
-				db.Close()
+				mr.shouldFail = true
 			},
 			func() string { return "/todos" },
 			500,
@@ -136,8 +214,8 @@ func TestList(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			setup()
-			defer teardown()
+			todoTestsSetup()
+			defer todoTestsTeardown()
 			test.modifier(new(bytes.Buffer))
 			req, err := http.NewRequest("GET", test.urlFunc(), nil)
 			if err != nil {
@@ -178,8 +256,8 @@ func TestRetrieve(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			setup()
-			defer teardown()
+			todoTestsSetup()
+			defer todoTestsTeardown()
 			b := new(bytes.Buffer)
 			test.modifier(b)
 			req, err := http.NewRequest("GET", test.urlFunc(), nil)
@@ -223,14 +301,21 @@ func TestUpdate(t *testing.T) {
 		},
 		{
 			"test update non existing",
-			func(b *bytes.Buffer) {},
-			func() string { return "/todos/999" },
+			func(b *bytes.Buffer) {
+			},
+			func() string {
+				nonExistingTodo := mr.todos[0]
+				mr.todos = mr.todos[1:]
+				url := fmt.Sprintf("/todos/%v", nonExistingTodo.Id)
+				fmt.Println(url)
+				return url
+			},
 			404,
 		},
 		{
 			"test update fail",
 			func(b *bytes.Buffer) {
-				db.Close()
+				mr.shouldFail = true
 			},
 			func() string { return "/todos/1" },
 			500,
@@ -239,8 +324,8 @@ func TestUpdate(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			setup()
-			defer teardown()
+			todoTestsSetup()
+			defer todoTestsTeardown()
 			todoW, err := createTodoBodyHelper()
 			if err != nil {
 				t.Errorf("Error creating todo: %v", err)
@@ -281,13 +366,18 @@ func TestDelete(t *testing.T) {
 		{
 			"test delete non existing",
 			func(b *bytes.Buffer) {},
-			func() string { return "/todos/999" },
+			func() string {
+				nonExistingTodo := mr.todos[0]
+				mr.todos = mr.todos[1:]
+				url := fmt.Sprintf("/todos/%v", nonExistingTodo.Id)
+				return url
+			},
 			404,
 		},
 		{
 			"test delete fail",
 			func(b *bytes.Buffer) {
-				db.Close()
+				mr.shouldFail = true
 			},
 			func() string { return "/todos/1" },
 			500,
@@ -296,8 +386,8 @@ func TestDelete(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			setup()
-			defer teardown()
+			todoTestsSetup()
+			defer todoTestsTeardown()
 			b := new(bytes.Buffer)
 			test.modifier(b)
 			req, err := http.NewRequest("DELETE", test.urlFunc(), nil)
