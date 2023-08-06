@@ -1,7 +1,9 @@
 package todo
 
 import (
-	"database/sql"
+	"errors"
+
+	"github.com/raphael-foliveira/fiber-todo/pkg/database"
 )
 
 type ITodoRepository interface {
@@ -13,10 +15,10 @@ type ITodoRepository interface {
 }
 
 type TodoRepository struct {
-	Db *sql.DB
+	Db *database.Database
 }
 
-func NewTodoRepository(db *sql.DB) *TodoRepository {
+func NewTodoRepository(db *database.Database) *TodoRepository {
 	return &TodoRepository{Db: db}
 }
 
@@ -67,7 +69,7 @@ func (tr *TodoRepository) Update(todo Todo) (Todo, error) {
 		return Todo{}, err
 	}
 	if rowsAffected == 0 {
-		return Todo{}, nil
+		return Todo{}, errors.New("todo not found")
 	}
 	return todo, nil
 }
@@ -77,5 +79,12 @@ func (tr *TodoRepository) Delete(id int) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return result.RowsAffected()
+	affectedRows, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	if affectedRows == 0 {
+		return 0, errors.New("todo not found")
+	}
+	return affectedRows, nil
 }

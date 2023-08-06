@@ -1,18 +1,15 @@
 package todo
 
 import (
-	"database/sql"
-
 	"github.com/gofiber/fiber/v2"
 )
 
-func GetTodoRoutes(group fiber.Router, db *sql.DB) fiber.Router {
-	repository := NewTodoRepository(db)
-	controller := NewTodoController(repository)
-	group.Post("/", controller.Create)
-	group.Get("/", controller.List)
-	group.Get("/:id", controller.Retrieve)
-	group.Put("/:id", controller.Update)
-	group.Delete("/:id", controller.Delete)
-	return group
+func GetTodoRoutes(router fiber.Router, controller *TodoController) fiber.Router {
+
+	router.Post("/", controller.Create)
+	router.Get("/", controller.List)
+	router.Get("/:id", controller.Retrieve)
+	router.Put("/:id", controller.Update)
+	router.Delete("/:id", controller.Delete)
+	return router
 }

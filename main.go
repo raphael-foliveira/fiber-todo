@@ -20,5 +20,5 @@ func main() {
 	db := database.MustGetDatabase(os.Getenv("DATABASE_URL"))
 	db.Migrate()
 	defer db.Close()
-	server.StartServer(db.DB)
+	server.StartServer(db)
 }

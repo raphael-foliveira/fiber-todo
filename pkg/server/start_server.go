@@ -1,7 +1,6 @@
 package server
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 
@@ -11,11 +10,12 @@ import (
 	"github.com/gofiber/swagger"
 	_ "github.com/raphael-foliveira/fiber-todo/docs"
 	"github.com/raphael-foliveira/fiber-todo/pkg/common"
+	"github.com/raphael-foliveira/fiber-todo/pkg/database"
 	"github.com/raphael-foliveira/fiber-todo/pkg/todo"
 )
 
 // StartServer starts the server and adds the routes
-func StartServer(db *sql.DB) {
+func StartServer(db *database.Database) {
 	fmt.Println("Starting server...")
 	app := fiber.New()
 	app.Use(cors.New())
@@ -28,10 +28,12 @@ func StartServer(db *sql.DB) {
 }
 
 // startRoutes starts the routes for the application
-func startRoutes(app *fiber.App, db *sql.DB) {
+func startRoutes(app *fiber.App, db *database.Database) {
 	app.Get("/", common.StatusCheck)
 	app.Get("/docs/*", swagger.HandlerDefault)
 	apiRoutes := app.Group("/api")
 	todoRoutes := apiRoutes.Group("/todos")
-	todo.GetTodoRoutes(todoRoutes, db)
+	repository := todo.NewTodoRepository(db)
+	controller := todo.NewTodoController(repository)
+	todo.GetTodoRoutes(todoRoutes, controller)
 }
