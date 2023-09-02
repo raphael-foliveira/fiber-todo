@@ -29,7 +29,7 @@ type mockRepository struct {
 	shouldFail bool
 }
 
-func (mr *mockRepository) Create(todo TodoDto) (Todo, error) {
+func (mr *mockRepository) Create(todo CreateTodoDto) (Todo, error) {
 	id := 0
 	for _, t := range mr.todos {
 		if t.Title == todo.Title {

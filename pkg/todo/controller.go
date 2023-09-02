@@ -138,8 +138,8 @@ func (tc *TodoController) Delete(c *fiber.Ctx) error {
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-func parseTodoFromBody(c *fiber.Ctx) (TodoDto, error) {
-	var todo TodoDto
+func parseTodoFromBody(c *fiber.Ctx) (CreateTodoDto, error) {
+	var todo CreateTodoDto
 	err := c.BodyParser(&todo)
 	return todo, err
 }
