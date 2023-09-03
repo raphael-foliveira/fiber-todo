@@ -30,12 +30,12 @@ func (tc *TodoController) Create(c *fiber.Ctx) error {
 	todo, err := parseTodoFromBody(c)
 	if err != nil {
 		fmt.Println(err)
-		return fiber.NewError(fiber.StatusBadRequest)
+		return fiber.NewError(fiber.StatusBadRequest, "bad request body")
 	}
 	createdTodo, err := tc.repository.Create(todo)
 	if err != nil {
 		fmt.Println(err)
-		return fiber.NewError(fiber.StatusConflict)
+		return fiber.NewError(fiber.StatusConflict, "todo already exists")
 	}
 	return c.Status(fiber.StatusCreated).JSON(createdTodo)
 }
