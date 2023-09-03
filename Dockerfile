@@ -8,4 +8,4 @@ COPY . .
 
 RUN go get ./...
 
-CMD ["go", "run", "./cmd/main.go"]
+CMD ["make", "run"]

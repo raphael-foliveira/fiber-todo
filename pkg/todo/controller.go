@@ -30,12 +30,12 @@ func (tc *TodoController) Create(c *fiber.Ctx) error {
 	todo, err := parseTodoFromBody(c)
 	if err != nil {
 		fmt.Println(err)
-		return c.SendStatus(fiber.StatusBadRequest)
+		return fiber.NewError(fiber.StatusBadRequest)
 	}
 	createdTodo, err := tc.repository.Create(todo)
 	if err != nil {
 		fmt.Println(err)
-		return c.SendStatus(fiber.StatusConflict)
+		return fiber.NewError(fiber.StatusConflict)
 	}
 	return c.Status(fiber.StatusCreated).JSON(createdTodo)
 }
@@ -52,7 +52,7 @@ func (tc *TodoController) Create(c *fiber.Ctx) error {
 func (tc *TodoController) List(c *fiber.Ctx) error {
 	todos, err := tc.repository.List()
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return fiber.NewError(fiber.StatusInternalServerError)
 	}
 	return c.Status(fiber.StatusOK).JSON(todos)
 }
@@ -71,11 +71,11 @@ func (tc *TodoController) List(c *fiber.Ctx) error {
 func (tc *TodoController) Retrieve(c *fiber.Ctx) error {
 	intId, err := common.ParseIdFromParams(c)
 	if err != nil {
-		return c.SendStatus(fiber.StatusUnprocessableEntity)
+		return fiber.NewError(fiber.StatusUnprocessableEntity)
 	}
 	todo, err := tc.repository.Retrieve(intId)
 	if err != nil {
-		return c.SendStatus(fiber.StatusNotFound)
+		return fiber.NewError(fiber.StatusNotFound)
 	}
 	return c.Status(fiber.StatusOK).JSON(todo)
 }
@@ -96,18 +96,18 @@ func (tc *TodoController) Retrieve(c *fiber.Ctx) error {
 func (tc *TodoController) Update(c *fiber.Ctx) (err error) {
 	todo, err := parseTodoFromBody(c)
 	if err != nil {
-		return c.SendStatus(fiber.StatusBadRequest)
+		return fiber.NewError(fiber.StatusBadRequest)
 	}
 	todoId, err := common.ParseIdFromParams(c)
 	if err != nil {
-		return c.SendStatus(fiber.StatusUnprocessableEntity)
+		return fiber.NewError(fiber.StatusUnprocessableEntity)
 	}
 	uTodo, err := tc.repository.Update(Todo{Id: todoId, Title: todo.Title, Description: todo.Description, Completed: todo.Completed})
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return fiber.NewError(fiber.StatusInternalServerError)
 	}
 	if uTodo.Id == 0 {
-		return c.SendStatus(fiber.StatusNotFound)
+		return fiber.NewError(fiber.StatusNotFound)
 	}
 	return c.Status(fiber.StatusOK).JSON(uTodo)
 }
@@ -126,20 +126,20 @@ func (tc *TodoController) Update(c *fiber.Ctx) (err error) {
 func (tc *TodoController) Delete(c *fiber.Ctx) error {
 	intId, err := common.ParseIdFromParams(c)
 	if err != nil {
-		return c.SendStatus(fiber.StatusUnprocessableEntity)
+		return fiber.NewError(fiber.StatusUnprocessableEntity)
 	}
 	affected, err := tc.repository.Delete(intId)
 	if err != nil {
-		return c.SendStatus(fiber.StatusInternalServerError)
+		return fiber.NewError(fiber.StatusInternalServerError)
 	}
 	if affected == 0 {
-		return c.SendStatus(fiber.StatusNotFound)
+		return fiber.NewError(fiber.StatusNotFound)
 	}
 	return c.SendStatus(fiber.StatusNoContent)
 }
 
-func parseTodoFromBody(c *fiber.Ctx) (TodoDto, error) {
-	var todo TodoDto
+func parseTodoFromBody(c *fiber.Ctx) (CreateTodoDto, error) {
+	var todo CreateTodoDto
 	err := c.BodyParser(&todo)
 	return todo, err
 }

@@ -1,6 +1,6 @@
 package todo
 
-type TodoDto struct {
+type CreateTodoDto struct {
 	Title       string `json:"title"`
 	Description string `json:"description"`
 	Completed   bool   `json:"completed"`

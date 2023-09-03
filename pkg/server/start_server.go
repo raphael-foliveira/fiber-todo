@@ -21,6 +21,7 @@ func StartServer(db *database.Database) {
 	app.Use(cors.New())
 	app.Use(logger.New())
 	startRoutes(app, db)
+
 	err := app.Listen(":3000")
 	if err != nil {
 		log.Fatalf("%s", err)

@@ -26,7 +26,7 @@ func repositoryTestsTeardown() {
 func TestRepositoryCreate(t *testing.T) {
 	repositoryTestsSetup()
 	defer repositoryTestsTeardown()
-	todo, err := repository.Create(TodoDto{
+	todo, err := repository.Create(CreateTodoDto{
 		Title:       "Test",
 		Description: "Test",
 		Completed:   false,
