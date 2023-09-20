@@ -5,6 +5,15 @@ definitions:
       id:
         type: integer
     type: object
+  todo.CreateTodoDto:
+    properties:
+      completed:
+        type: boolean
+      description:
+        type: string
+      title:
+        type: string
+    type: object
   todo.Todo:
     properties:
       completed:
@@ -16,7 +25,7 @@ definitions:
       title:
         type: string
     type: object
-  todo.TodoDto:
+  todo.UpdateTodoDto:
     properties:
       completed:
         type: boolean
@@ -64,7 +73,7 @@ paths:
         name: todo
         required: true
         schema:
-          $ref: '#/definitions/todo.TodoDto'
+          $ref: '#/definitions/todo.CreateTodoDto'
       produces:
       - application/json
       responses:
@@ -153,7 +162,7 @@ paths:
         name: todo
         required: true
         schema:
-          $ref: '#/definitions/todo.TodoDto'
+          $ref: '#/definitions/todo.UpdateTodoDto'
       produces:
       - application/json
       responses:

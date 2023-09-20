@@ -4,7 +4,9 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
+	_ "github.com/raphael-foliveira/fiber-todo/docs"
 	"github.com/raphael-foliveira/fiber-todo/pkg/database"
+
 	"github.com/raphael-foliveira/fiber-todo/pkg/server"
 )
 

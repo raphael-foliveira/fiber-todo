@@ -15,13 +15,13 @@ func NewTodoController(repository ITodoRepository) *TodoController {
 	return &TodoController{repository: repository}
 }
 
-// Create godoc
+// @Create godoc
 // @Summary Create a new To Do
 // @Description Create a new To Do
 // @Tags To Do
 // @Accept json
 // @Produce json
-// @Param todo body TodoDto true "To Do Create"
+// @Param todo body CreateTodoDto true "To Do Create"
 // @Success 201 {object} CreateResponse
 // @Failure 400 {object} string "Bad Request"
 // @Failure 500 {object} string "Internal Server Error"
@@ -87,7 +87,7 @@ func (tc *TodoController) Retrieve(c *fiber.Ctx) error {
 // @Accept json
 // @Produce json
 // @Param id path int true "To Do ID"
-// @Param todo body TodoDto true "To Do Update"
+// @Param todo body UpdateTodoDto true "To Do Update"
 // @Success 200 {object} Todo
 // @Failure 404 {object} string "Not Found"
 // @Failure 422 {object} string "Unprocessable Entity"
