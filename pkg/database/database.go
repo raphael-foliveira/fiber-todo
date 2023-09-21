@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	_ "github.com/lib/pq"
-	"github.com/raphael-foliveira/fiber-todo/pkg/database/migrations"
+	"github.com/raphael-foliveira/fiber-todo/pkg/database/queries"
 )
 
 func GetDatabase(url string) (*Database, error) {
@@ -29,17 +29,10 @@ type Database struct {
 	*sql.DB
 }
 
-func (db *Database) Migrate() {
-	_, err := db.Exec(migrations.Schema)
+func (db *Database) CreateSchema() {
+	_, err := db.Exec(queries.Schema)
 	if err != nil {
 		fmt.Println("error creating schema")
 		panic(err)
-	}
-	for _, migration := range migrations.Migrations {
-		_, err := db.Exec(migration)
-		if err != nil {
-			fmt.Println("error running migrations")
-			panic(err)
-		}
 	}
 }

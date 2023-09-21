@@ -14,7 +14,7 @@ var repository *TodoRepository
 
 func repositoryTestsSetup() {
 	db := database.MustGetDatabase(config.Database.Url)
-	db.Migrate()
+	db.CreateSchema()
 	repository = NewTodoRepository(db)
 }
 

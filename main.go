@@ -20,7 +20,7 @@ import (
 func main() {
 	godotenv.Load()
 	db := database.MustGetDatabase(os.Getenv("DATABASE_URL"))
-	db.Migrate()
+	db.CreateSchema()
 	defer db.Close()
 	server.StartServer(db)
 }
