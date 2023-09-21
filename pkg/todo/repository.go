@@ -23,8 +23,12 @@ func NewTodoRepository(db *database.Database) *TodoRepository {
 }
 
 func (tr *TodoRepository) Create(todo CreateTodoDto) (Todo, error) {
-	row := tr.Db.QueryRow("INSERT INTO todo (title, description, completed) VALUES ($1, $2, $3) RETURNING id, title, description, completed",
-		todo.Title, todo.Description, todo.Completed)
+	row := tr.Db.QueryRow(`
+		INSERT INTO todo (title, description, completed) 
+		VALUES ($1, $2, $3) 
+		RETURNING id, title, description, completed`,
+		todo.Title, todo.Description, todo.Completed,
+	)
 	var createdTodo Todo
 	err := row.Scan(&createdTodo.Id, &createdTodo.Title, &createdTodo.Description, &createdTodo.Completed)
 	return createdTodo, err
