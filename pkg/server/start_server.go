@@ -1,7 +1,6 @@
 package server
 
 import (
-	"errors"
 	"fmt"
 	"log"
 
@@ -10,7 +9,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/swagger"
-	_ "github.com/raphael-foliveira/fiber-todo/docs"
 	"github.com/raphael-foliveira/fiber-todo/pkg/common"
 	"github.com/raphael-foliveira/fiber-todo/pkg/database"
 	"github.com/raphael-foliveira/fiber-todo/pkg/todo"
@@ -20,24 +18,7 @@ import (
 func StartServer(db *database.Database) {
 	fmt.Println("Starting server...")
 	app := fiber.New(fiber.Config{
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
-			code := fiber.StatusInternalServerError
-			var e *fiber.Error
-			if errors.As(err, &e) {
-				code = e.Code
-			}
-
-			err = c.Status(code).JSON(fiber.Map{
-				"error":       err.Error(),
-				"status_code": code,
-			})
-			if err != nil {
-				return c.Status(500).JSON(fiber.Map{
-					"error": "internal server error",
-				})
-			}
-			return nil
-		},
+		ErrorHandler: errorHandler,
 	})
 	app.Use(recover.New())
 	app.Use(cors.New())

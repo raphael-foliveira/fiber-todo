@@ -69,7 +69,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/todo.TodoDto"
+                            "$ref": "#/definitions/todo.CreateTodoDto"
                         }
                     }
                 ],
@@ -164,7 +164,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/todo.TodoDto"
+                            "$ref": "#/definitions/todo.UpdateTodoDto"
                         }
                     }
                 ],
@@ -245,6 +245,20 @@ const docTemplate = `{
                 }
             }
         },
+        "todo.CreateTodoDto": {
+            "type": "object",
+            "properties": {
+                "completed": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "todo.Todo": {
             "type": "object",
             "properties": {
@@ -262,7 +276,7 @@ const docTemplate = `{
                 }
             }
         },
-        "todo.TodoDto": {
+        "todo.UpdateTodoDto": {
             "type": "object",
             "properties": {
                 "completed": {

@@ -61,7 +61,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/todo.TodoDto"
+                            "$ref": "#/definitions/todo.CreateTodoDto"
                         }
                     }
                 ],
@@ -156,7 +156,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/todo.TodoDto"
+                            "$ref": "#/definitions/todo.UpdateTodoDto"
                         }
                     }
                 ],
@@ -237,6 +237,20 @@
                 }
             }
         },
+        "todo.CreateTodoDto": {
+            "type": "object",
+            "properties": {
+                "completed": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
         "todo.Todo": {
             "type": "object",
             "properties": {
@@ -254,7 +268,7 @@
                 }
             }
         },
-        "todo.TodoDto": {
+        "todo.UpdateTodoDto": {
             "type": "object",
             "properties": {
                 "completed": {

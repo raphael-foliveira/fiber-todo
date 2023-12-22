@@ -6,6 +6,8 @@ type CreateTodoDto struct {
 	Completed   bool   `json:"completed"`
 }
 
+type UpdateTodoDto CreateTodoDto
+
 type CreateResponse struct {
 	Id int `json:"id"`
 }

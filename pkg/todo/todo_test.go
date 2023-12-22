@@ -112,10 +112,6 @@ func createTodoBodyHelper() (*bytes.Buffer, error) {
 	return todoW, err
 }
 func todoTestsSetup() {
-	// db = database.MustGetDatabase(config.Database.Url)
-	// db.Exec(queries.RecreateSchema)
-	// db.Migrate()
-	// db.Exec(queries.InsertTodoFixtures)
 	app = fiber.New()
 	group := app.Group("/todos")
 	mr = new(mockRepository)

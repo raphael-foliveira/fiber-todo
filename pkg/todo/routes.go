@@ -5,7 +5,6 @@ import (
 )
 
 func GetTodoRoutes(router fiber.Router, controller *TodoController) fiber.Router {
-
 	router.Post("/", controller.Create)
 	router.Get("/", controller.List)
 	router.Get("/:id", controller.Retrieve)
