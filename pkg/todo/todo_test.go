@@ -29,11 +29,11 @@ type mockRepository struct {
 	shouldFail bool
 }
 
-func (mr *mockRepository) Create(todo CreateTodoDto) (Todo, error) {
+func (mr *mockRepository) Create(todo CreateTodoDto) (*Todo, error) {
 	id := 0
 	for _, t := range mr.todos {
 		if t.Title == todo.Title {
-			return Todo{}, errors.New("todo already exists in mock repository")
+			return nil, errors.New("todo already exists in mock repository")
 		}
 		id++
 	}
@@ -43,7 +43,7 @@ func (mr *mockRepository) Create(todo CreateTodoDto) (Todo, error) {
 		Description: todo.Description,
 		Completed:   todo.Completed,
 	})
-	return Todo{}, nil
+	return nil, nil
 }
 
 func (mr *mockRepository) List() ([]Todo, error) {
@@ -53,18 +53,18 @@ func (mr *mockRepository) List() ([]Todo, error) {
 	return mr.todos, nil
 }
 
-func (mr *mockRepository) Retrieve(id int) (Todo, error) {
+func (mr *mockRepository) Retrieve(id int) (*Todo, error) {
 	for _, todo := range mr.todos {
 		if todo.Id == id {
-			return todo, nil
+			return &todo, nil
 		}
 	}
-	return Todo{}, errors.New("todo not found in mock repository")
+	return nil, errors.New("todo not found in mock repository")
 }
 
-func (mr *mockRepository) Update(todo Todo) (Todo, error) {
+func (mr *mockRepository) Update(todo Todo) (*Todo, error) {
 	if mr.shouldFail {
-		return Todo{}, errors.New("error updating todo")
+		return nil, errors.New("error updating todo")
 	}
 	for _, t := range mr.todos {
 		if t.Id == todo.Id {
@@ -72,10 +72,10 @@ func (mr *mockRepository) Update(todo Todo) (Todo, error) {
 			t.Title = todo.Title
 			t.Description = todo.Description
 			t.Completed = todo.Completed
-			return t, nil
+			return &t, nil
 		}
 	}
-	return Todo{Id: 0}, nil
+	return &Todo{Id: 0}, nil
 }
 
 func (mr *mockRepository) Delete(id int) (int64, error) {
