@@ -37,7 +37,6 @@ func startRoutes(app *fiber.App, db *database.Database) {
 	app.Get("/docs/*", swagger.HandlerDefault)
 	apiRoutes := app.Group("/api")
 	todoRoutes := apiRoutes.Group("/todos")
-	repository := todo.NewTodoRepository(db)
-	controller := todo.NewTodoController(repository)
-	todo.GetTodoRoutes(todoRoutes, controller)
+	todoModule := todo.New(db)
+	todo.GetTodoRoutes(todoRoutes, todoModule.Controller)
 }
