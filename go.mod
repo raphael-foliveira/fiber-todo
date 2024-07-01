@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/go-faker/faker/v4 v4.1.1
-	github.com/gofiber/fiber/v2 v2.52.1
+	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/gofiber/swagger v0.1.12
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
